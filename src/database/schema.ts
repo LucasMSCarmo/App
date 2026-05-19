@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: 'tasks',
@@ -38,6 +38,19 @@ export default appSchema({
         { name: 'order', type: 'number' },
         { name: 'task_id', type: 'string', isIndexed: true },
       ],
+    }),
+
+    tableSchema({
+      name: 'media',
+      columns: [
+        { name: 'server_id', type: 'string', isIndexed: true },
+        { name: 'name', type: 'string' },
+        { name: 'url', type: 'string' },
+        { name: 'mime_type', type: 'string' },
+        { name: 'type', type: 'string' },
+        { name: 'size', type: 'number', isOptional: true },
+        { name: 'task_id', type: 'string', isIndexed: true },
+      ]
     }),
 
     tableSchema({

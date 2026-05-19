@@ -1,20 +1,43 @@
-export const TASK_PRIORITIES = {
-  low: { value: 'low', label: 'Baixa', color: '#22c55e' },
-  medium: { value: 'medium', label: 'Média', color: '#f59e0b' },
-  high: { value: 'high', label: 'Alta', color: '#ef4444' },
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type TaskPriority = 'low' | 'medium' | 'high' | 'none';
+export type ValidTaskPriority = Exclude<TaskPriority, 'none'> | '';
+export type TaskStatus   = 'pending' | 'in_progress' | 'done' | 'cancelled';
+
+// ─── Priority ─────────────────────────────────────────────────────────────────
+
+export const TASK_PRIORITIES: Record<TaskPriority, {
+    value:      TaskPriority;
+    label:      string;
+    colorKey:   'priorityLow' | 'priorityMedium' | 'priorityHigh' | 'priorityNone';
+    surfaceKey: 'successSurface' | 'warningSurface' | 'dangerSurface' | 'surfaceVariant';
+}> = {
+    low:    { value: 'low',    label: 'Baixa',   colorKey: 'priorityLow',    surfaceKey: 'successSurface'  },
+    medium: { value: 'medium', label: 'Média',   colorKey: 'priorityMedium', surfaceKey: 'warningSurface'  },
+    high:   { value: 'high',   label: 'Alta',    colorKey: 'priorityHigh',   surfaceKey: 'dangerSurface'   },
+    none:   { value: 'none',   label: 'Nenhuma', colorKey: 'priorityNone',   surfaceKey: 'surfaceVariant'  },
 } as const;
 
-export const TASK_STATUS = {
-  pending: { value: 'pending', label: 'Pendente' },
-  in_progress: { value: 'in_progress', label: 'Em Progresso' },
-  completed: { value: 'completed', label: 'Concluído' },
+export const {none: _, ...VALID_TASK_PRIORITIES} = TASK_PRIORITIES;
+
+// ─── Status ───────────────────────────────────────────────────────────────────
+
+export const TASK_STATUS: Record<TaskStatus, {
+    value:      TaskStatus;
+    label:      string;
+    colorKey:   'statusPending' | 'statusInProgress' | 'statusDone' | 'statusCancelled';
+    surfaceKey: 'warningSurface' | 'infoSurface' | 'successSurface' | 'dangerSurface';
+}> = {
+    pending:     { value: 'pending',     label: 'Pendente',     colorKey: 'statusPending',    surfaceKey: 'warningSurface' },
+    in_progress: { value: 'in_progress', label: 'Em andamento', colorKey: 'statusInProgress', surfaceKey: 'infoSurface'    },
+    done:        { value: 'done',        label: 'Concluído',    colorKey: 'statusDone',       surfaceKey: 'successSurface' },
+    cancelled:   { value: 'cancelled',   label: 'Cancelado',    colorKey: 'statusCancelled',  surfaceKey: 'dangerSurface'  },
 } as const;
 
-// Helper para pegar a cor ou o label rapidamente
-export const getPriorityDetails = (priority: string) => {
-  return Object.values(TASK_PRIORITIES).find(p => p.value === priority) || TASK_PRIORITIES.medium;
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-export const getStatusDetails = (status: string) => {
-  return Object.values(TASK_STATUS).find(s => s.value === status) || TASK_STATUS.pending;
-};
+export const getPriorityDetails = (priority: string) =>
+    TASK_PRIORITIES[priority as TaskPriority] ?? TASK_PRIORITIES.none;
+
+export const getStatusDetails = (status: string) =>
+    TASK_STATUS[status as TaskStatus] ?? TASK_STATUS.pending;

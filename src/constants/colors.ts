@@ -193,6 +193,9 @@ export const Colors = {
     // === SKELETON / LOADING ===
     skeletonBase: palette.gray200,
     skeletonHighlight: palette.gray100,
+
+    mediaBorder: '#C5C2FF',
+    mediaSurface: '#F5F4FF',
   },
 
   dark: {
@@ -345,5 +348,8 @@ export const Colors = {
     // === SKELETON / LOADING ===
     skeletonBase: palette.dark300,
     skeletonHighlight: palette.dark400,
+
+    mediaBorder: '#3D3870',
+    mediaSurface: '#1A1830',
   },
 };

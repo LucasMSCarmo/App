@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, LayoutAnimation } from 'react-native';
+import React, { useState, useRef } from 'react';
+import {
+    View, Text, StyleSheet, TouchableOpacity, Alert,
+    Modal, TouchableWithoutFeedback,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TaskMember from '@/src/database/model/TaskMember';
 import Task from '@/src/database/model/Task';
@@ -7,140 +10,230 @@ import Task from '@/src/database/model/Task';
 interface Props {
     task: Task;
     members: TaskMember[];
-    currentUserId: string | undefined;
     colors: any;
 }
 
-export function TaskMembersManager({ task, members, currentUserId, colors }: Props) {
-    const [expanded, setExpanded] = useState(false);
+const AVATAR_SIZE = 32;
+const AVATAR_OVERLAP = 10;
 
-    const toggleExpanded = () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setExpanded(!expanded);
+export function TaskMembersManager({ task, members, colors }: Props) {
+    const [popoverVisible, setPopoverVisible] = useState(false);
+    const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+    const triggerRef = useRef<View>(null);
+
+    const openPopover = () => {
+        triggerRef.current?.measureInWindow((x, y, width, height) => {
+            setPopoverPosition({ top: y + height + 8, left: x });
+            setPopoverVisible(true);
+        });
     };
 
     const handleRemoveMember = (member: TaskMember) => {
-        // Regra 1: Se o usuário é o criador
         const isCreator = member.userId === task.createdBy;
 
         if (isCreator) {
             Alert.alert(
-                "Atenção",
-                "Você é o criador desta tarefa. Remover a si mesmo apagará a tarefa para todos. Deseja continuar?",
+                'Atenção',
+                'Você é o criador desta tarefa. Remover a si mesmo apagará a tarefa para todos. Deseja continuar?',
                 [
-                    { text: "Cancelar", style: "cancel" },
+                    { text: 'Cancelar', style: 'cancel' },
                     {
-                        text: "Apagar tudo",
-                        style: "destructive",
+                        text: 'Apagar tudo', style: 'destructive',
                         onPress: async () => {
-                            await task.database.write(async () => {
-                                await task.markAsDeleted();
-                            });
-                        }
-                    }
+                            setPopoverVisible(false);
+                            await task.database.write(async () => { await task.markAsDeleted(); });
+                        },
+                    },
                 ]
             );
             return;
         }
 
-        // Regra 2: Apenas o criador ou o próprio membro pode se remover (opcional, adicionei para segurança)
         Alert.alert(
-            "Remover Membro",
+            'Remover Membro',
             `Deseja remover ${member.userName} desta tarefa?`,
             [
-                { text: "Cancelar", style: "cancel" },
+                { text: 'Cancelar', style: 'cancel' },
                 {
-                    text: "Remover",
-                    style: "destructive",
+                    text: 'Remover', style: 'destructive',
                     onPress: async () => {
-                        await task.database.write(async () => {
-                            await member.markAsDeleted();
-                        });
-                    }
-                }
+                        await task.database.write(async () => { await member.markAsDeleted(); });
+                    },
+                },
             ]
         );
     };
 
+    const visibleMembers = members.slice(0, 4);
+    const overflow = members.length - 4;
+    const totalWidth = AVATAR_SIZE + (visibleMembers.length - 1) * (AVATAR_SIZE - AVATAR_OVERLAP) + (overflow > 0 ? AVATAR_SIZE - AVATAR_OVERLAP : 0);
+
     return (
-        <View style={styles.container}>
-            <TouchableOpacity onPress={toggleExpanded} activeOpacity={0.7}>
+        <>
+            {/* Trigger — grupo de avatares */}
+            <TouchableOpacity
+                ref={triggerRef}
+                onPress={openPopover}
+                activeOpacity={0.7}
+                style={{ width: Math.max(totalWidth, AVATAR_SIZE), height: AVATAR_SIZE }}
+            >
                 <View style={styles.avatarGroup}>
-                    {members.slice(0, 4).map((member, index) => (
+                    {visibleMembers.map((member, index) => (
                         <View
                             key={member.id}
                             style={[
                                 styles.avatarCircle,
-                                { backgroundColor: colors.primary, marginLeft: index === 0 ? 0 : -12 }
+                                {
+                                    backgroundColor: colors.primarySurface,
+                                    borderColor: colors.background,
+                                    left: index * (AVATAR_SIZE - AVATAR_OVERLAP),
+                                },
                             ]}
                         >
-                            <Text style={styles.avatarLetter}>{member.userName.charAt(0).toUpperCase()}</Text>
+                            <Text style={[styles.avatarLetter, { color: colors.primary }]}>
+                                {member.userName.charAt(0).toUpperCase()}
+                            </Text>
                         </View>
                     ))}
-                    {members.length > 4 && (
-                        <View style={[styles.avatarCircle, { backgroundColor: '#444', marginLeft: -12 }]}>
-                            <Text style={styles.avatarLetter}>+{members.length - 4}</Text>
+                    {overflow > 0 && (
+                        <View
+                            style={[
+                                styles.avatarCircle,
+                                {
+                                    backgroundColor: colors.surfaceVariant,
+                                    borderColor: colors.background,
+                                    left: visibleMembers.length * (AVATAR_SIZE - AVATAR_OVERLAP),
+                                },
+                            ]}
+                        >
+                            <Text style={[styles.avatarLetter, { color: colors.textSecondary }]}>
+                                +{overflow}
+                            </Text>
                         </View>
                     )}
                 </View>
             </TouchableOpacity>
 
-            {expanded && (
-                <View style={styles.expandedList}>
-                    {members.map(member => (
-                        <View key={member.id} style={styles.memberRow}>
-                            <View style={styles.memberInfo}>
-                                <View style={[styles.avatarCircle, { backgroundColor: colors.primary, width: 30, height: 30 }]}>
-                                    <Text style={styles.avatarLetter}>{member.userName.charAt(0)}</Text>
-                                </View>
-                                <Text style={[styles.memberName, { color: colors.text }]}>
-                                    {member.userName} {member.userId === task.createdBy && "(Criador)"}
-                                </Text>
-                            </View>
+            {/* Popover */}
+            <Modal visible={popoverVisible} transparent animationType="fade" onRequestClose={() => setPopoverVisible(false)}>
+                <TouchableWithoutFeedback onPress={() => setPopoverVisible(false)}>
+                    <View style={StyleSheet.absoluteFill} />
+                </TouchableWithoutFeedback>
 
-                            <TouchableOpacity onPress={() => handleRemoveMember(member)}>
-                                <Ionicons name="close-circle" size={22} color="#ef4444" />
-                            </TouchableOpacity>
-                        </View>
-                    ))}
+                <View style={[
+                    styles.popover,
+                    {
+                        top: popoverPosition.top,
+                        left: popoverPosition.left,
+                        backgroundColor: colors.modalBackground,
+                        borderColor: colors.modalBorder,
+                    },
+                ]}>
+                    <Text style={[styles.popoverTitle, { color: colors.textMuted }]}>
+                        {members.length} {members.length === 1 ? 'membro' : 'membros'}
+                    </Text>
+
+                    {members.map((member, index) => {
+                        const isCreator = member.userId === task.createdBy;
+                        const isLast = index === members.length - 1;
+
+                        return (
+                            <View
+                                key={member.id}
+                                style={[
+                                    styles.memberRow,
+                                    !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider },
+                                ]}
+                            >
+                                <View style={[styles.avatarSmall, { backgroundColor: colors.primarySurface }]}>
+                                    <Text style={[styles.avatarLetter, { color: colors.primary, fontSize: 12 }]}>
+                                        {member.userName.charAt(0).toUpperCase()}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.memberInfo}>
+                                    <Text style={[styles.memberName, { color: colors.text }]} numberOfLines={1}>
+                                        {member.userName}
+                                    </Text>
+                                    {isCreator && (
+                                        <Text style={[styles.creatorBadge, { color: colors.primary }]}>Criador</Text>
+                                    )}
+                                </View>
+                                {!isCreator && (
+                                    <TouchableOpacity
+                                        onPress={() => handleRemoveMember(member)}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Ionicons name="close" size={18} color={colors.danger} />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        );
+                    })}
                 </View>
-            )}
-        </View>
+            </Modal>
+        </>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { marginBottom: 20, borderRadius: 12, overflow: 'hidden' },
-    headerBar: {
+    avatarGroup: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: 12,
+        position: 'relative',
+        height: AVATAR_SIZE,
     },
-    avatarGroup: { flexDirection: 'row', alignItems: 'center' },
     avatarCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        position: 'absolute',
+        width: AVATAR_SIZE,
+        height: AVATAR_SIZE,
+        borderRadius: AVATAR_SIZE / 2,
         borderWidth: 2,
-        borderColor: '#121212',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    avatarLetter: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-    rightSide: { flexDirection: 'row', alignItems: 'center' },
-    expandedList: { marginTop: 8, paddingHorizontal: 8 },
+    avatarLetter: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    popover: {
+        position: 'absolute',
+        minWidth: 220,
+        maxWidth: 280,
+        borderRadius: 14,
+        borderWidth: StyleSheet.hairlineWidth,
+        padding: 12,
+        zIndex: 999,
+    },
+    popoverTitle: {
+        fontSize: 11,
+        fontWeight: '600',
+        letterSpacing: 0.4,
+        textTransform: 'uppercase',
+        marginBottom: 10,
+    },
     memberRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.05)',
+        gap: 10,
     },
-    memberInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    memberName: { fontSize: 16 },
+    avatarSmall: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    memberInfo: {
+        flex: 1,
+        gap: 2,
+    },
+    memberName: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    creatorBadge: {
+        fontSize: 11,
+        fontWeight: '600',
+    },
 });

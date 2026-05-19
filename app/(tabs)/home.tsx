@@ -10,231 +10,275 @@ import TaskItem from '@/src/components/TaskItem';
 import { CreateTaskModal } from '@/src/components/CreateTaskModal';
 import { useTheme } from '@/src/contexts/ThemeContext';
 
+// ─── Saudação dinâmica ────────────────────────────────────────────────────────
+
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Bom dia';
+    if (hour < 18) return 'Boa tarde';
+    return 'Boa noite';
+}
+
+// ─── Home ─────────────────────────────────────────────────────────────────────
+
 function Home({ tasks }: { tasks: Task[] }) {
-  const { user } = useAuth();
-  const { colors } = useTheme();
-  const [refreshing, setRefreshing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+    const { user } = useAuth();
+    const { colors } = useTheme();
+    const [refreshing, setRefreshing] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    console.log("Iniciando sincronização...");
-    setRefreshing(false);
-  };
+    const onRefresh = async () => {
+        setRefreshing(true);
+        console.log('Iniciando sincronização...');
+        setRefreshing(false);
+    };
 
-  const stats = {
-    total: tasks.length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-    get percentage() {
-      return this.total > 0 ? Math.round((this.completed / this.total) * 100) : 0;
-    }
-  };
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.status === 'done').length;
+    const pending = tasks.filter(t => t.status === 'pending').length;
+    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-      >
-        <View style={styles.header}>
-          <Text style={[styles.greeting, { color: colors.text }]}>{user ? `Bom dia, ${user.name}! 👋` : 'Bom dia! 👋'}</Text>
-          <Text style={[styles.tasksCount, { color: colors.textSecondary }]}>
-            Você tem {stats.total} tarefas para hoje
-          </Text>
+    return (
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={colors.primary}
+                        colors={[colors.primary]}
+                    />
+                }
+            >
+                {/* Header */}
+                <View style={styles.header}>
+                    <Text style={[styles.greeting, { color: colors.text }]}>
+                        {getGreeting()}{user?.name ? `, ${user.name}` : ''}! 👋
+                    </Text>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                        {total === 0
+                            ? 'Nenhuma tarefa para hoje'
+                            : `${total} ${total === 1 ? 'tarefa' : 'tarefas'} para hoje`}
+                    </Text>
+                </View>
+
+                {/* Card de progresso */}
+                <View style={[styles.progressCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+                    <View style={styles.progressHeader}>
+                        <View>
+                            <Text style={[styles.progressTitle, { color: colors.text }]}>Progresso do dia</Text>
+                            <Text style={[styles.progressSubtitle, { color: colors.textSecondary }]}>
+                                {total === 0 ? 'Sem tarefas para hoje' : `${completed} de ${total} concluída${completed !== 1 ? 's' : ''}`}
+                            </Text>
+                        </View>
+                        <Text style={[styles.progressPercentage, { color: progress === 100 ? colors.success : colors.primary }]}>
+                            {progress}%
+                        </Text>
+                    </View>
+
+                    <View style={[styles.progressTrack, { backgroundColor: colors.surfaceVariant }]}>
+                        <View style={[
+                            styles.progressFill,
+                            {
+                                width: `${progress}%` as any,
+                                backgroundColor: progress === 100 ? colors.success : colors.primary,
+                            },
+                        ]} />
+                    </View>
+
+                    {/* Mini stats */}
+                    {total > 0 && (
+                        <View style={styles.statsRow}>
+                            <View style={styles.statItem}>
+                                <View style={[styles.statDot, { backgroundColor: colors.statusPending }]} />
+                                <Text style={[styles.statText, { color: colors.textSecondary }]}>
+                                    {pending} pendente{pending !== 1 ? 's' : ''}
+                                </Text>
+                            </View>
+                            <View style={styles.statItem}>
+                                <View style={[styles.statDot, { backgroundColor: colors.statusDone }]} />
+                                <Text style={[styles.statText, { color: colors.textSecondary }]}>
+                                    {completed} concluída{completed !== 1 ? 's' : ''}
+                                </Text>
+                            </View>
+                        </View>
+                    )}
+                </View>
+
+                {/* Lista de tarefas */}
+                <View style={styles.tasksSection}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Tarefas de hoje</Text>
+
+                    <FlatList
+                        data={tasks}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => <TaskItem task={item} type={'home'} />}
+                        scrollEnabled={false}
+                        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+                        ListEmptyComponent={() => (
+                            <View style={styles.emptyState}>
+                                <Ionicons name="sunny-outline" size={36} color={colors.textMuted} />
+                                <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
+                                    Dia livre!
+                                </Text>
+                                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                                    Nenhuma tarefa com prazo para hoje.
+                                </Text>
+                            </View>
+                        )}
+                    />
+                </View>
+            </ScrollView>
+
+            {/* FAB */}
+            <TouchableOpacity
+                style={[styles.fab, { backgroundColor: colors.buttonPrimary }]}
+                onPress={() => setModalVisible(true)}
+                activeOpacity={0.8}
+            >
+                <Ionicons name="add" size={30} color={colors.buttonPrimaryText} />
+            </TouchableOpacity>
+
+            <CreateTaskModal isVisible={modalVisible} onClose={() => setModalVisible(false)} />
         </View>
-
-        <View style={[styles.progressCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.progressTitle, { color: colors.text }]}>Seu progresso</Text>
-          {!stats.total && (
-            <Text style={[styles.progressSubtitle, { color: colors.textSecondary }]}>Nenhuma tarefa para hoje</Text>
-          )}
-          {stats.total > 0 && (
-            <Text style={[styles.progressSubtitle, { color: colors.textSecondary }]}>{stats.percentage}% concluído hoje</Text>
-          )}
-
-          <View style={[styles.progressBarContainer, stats.total > 0 ? { backgroundColor: '#2a2a2a' } : null]}>
-            <View style={[styles.progressBar, { width: `${stats.percentage}%`, backgroundColor: colors.primary }]} />
-          </View>
-        </View>
-
-        <View style={styles.tasksSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Tarefas</Text>
-
-          <FlatList
-            data={tasks}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <TaskItem task={item} />}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            ListEmptyComponent={() => (
-              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 20 }}>
-                Nenhuma tarefa para hoje
-              </Text>
-            )}
-          />
-        </View>
-      </ScrollView>
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="add" size={32} color="white" />
-      </TouchableOpacity>
-
-      <CreateTaskModal
-        isVisible={modalVisible}
-        onClose={() => setModalVisible(false)}
-      />
-    </View>
-  );
+    );
 }
 
 const enhance = withObservables([], () => {
-  const now = new Date();
+    const now = new Date();
+    const startOfDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0, 0, 0, 0,
+    );
 
-  const startOfUtcDay = new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate(),
-    0, 0, 0, 0
-  ));
+    const endOfDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23, 59, 59, 999,
+    );
 
-  const endOfUtcDay = new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate(),
-    23, 59, 59, 999
-  ));
-  return {
-    tasks: database.get<Task>('tasks').query(
-      Q.where('deadline', Q.between(startOfUtcDay.getTime(), endOfUtcDay.getTime()))
-    ).observe(),
-  };
+    return {
+        tasks: database.get<Task>('tasks').query(
+            Q.where('deadline', Q.between(startOfDay.getTime(), endOfDay.getTime()))
+        ).observe(),
+    };
 });
 
 export default enhance(Home);
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  header: {
-    padding: 20,
-    paddingTop: 60,
-  },
-  greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  tasksCount: {
-    fontSize: 16,
-    marginTop: 6,
-  },
-
-  progressCard: {
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-  },
-  progressTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  progressSubtitle: {
-    fontSize: 14,
-    marginTop: 6,
-    marginBottom: 12,
-  },
-  progressBarContainer: {
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-  },
-  progressPercentage: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-
-  tasksSection: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-
-  taskCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-  },
-  taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-  },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  taskDescription: {
-    fontSize: 14,
-    marginBottom: 12,
-  },
-
-  taskFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  subtaskInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  subtaskText: {
-    fontSize: 12,
-  },
-  dueDateInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dueDateText: {
-    fontSize: 12,
-  },
-  fab: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    right: 20,
-    bottom: 20,
-    backgroundColor: '#4f46e5',
-    borderRadius: 30,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
+    scrollContent: {
+        paddingBottom: 120,
+    },
+    header: {
+        paddingHorizontal: 20,
+        paddingTop: 60,
+        paddingBottom: 20,
+    },
+    greeting: {
+        fontSize: 28,
+        fontWeight: '700',
+        letterSpacing: -0.5,
+    },
+    subtitle: {
+        fontSize: 15,
+        marginTop: 4,
+    },
+    progressCard: {
+        marginHorizontal: 20,
+        marginBottom: 24,
+        padding: 20,
+        borderRadius: 16,
+        borderWidth: StyleSheet.hairlineWidth,
+        gap: 14,
+    },
+    progressHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+    },
+    progressTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    progressSubtitle: {
+        fontSize: 13,
+        marginTop: 3,
+    },
+    progressPercentage: {
+        fontSize: 28,
+        fontWeight: '700',
+        letterSpacing: -1,
+    },
+    progressTrack: {
+        height: 6,
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    statItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    statDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    statText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    tasksSection: {
+        paddingHorizontal: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 16,
+        letterSpacing: -0.2,
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 48,
+        gap: 8,
+    },
+    emptyTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginTop: 8,
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        textAlign: 'center',
+        maxWidth: 240,
+    },
+    fab: {
+        position: 'absolute',
+        width: 58,
+        height: 58,
+        alignItems: 'center',
+        justifyContent: 'center',
+        right: 20,
+        bottom: 24,
+        borderRadius: 29,
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+    },
 });
