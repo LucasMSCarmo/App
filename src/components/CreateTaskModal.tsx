@@ -2,11 +2,15 @@ import { VALID_TASK_PRIORITIES, ValidTaskPriority } from '@/src/constants/taskCo
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { database } from '@/src/database';
-import Task from '@/src/database/model/Task';
+import Category from '@/src/database/model/Category';
 import Media from '@/src/database/model/Media';
+import Task from '@/src/database/model/Task';
+import TaskCategory from '@/src/database/model/TaskCategory';
 import TaskMember from '@/src/database/model/TaskMember';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
+import * as Crypto from 'expo-crypto';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     Keyboard,
@@ -21,9 +25,23 @@ import {
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
-import * as Crypto from 'expo-crypto';
-import { MediaPicker } from './MediaPicker';
 import { LocalMedia } from '../constants/mediaConstants';
+import { useTaskNotification } from '../hooks/useNotification';
+import { MapPickerModal } from './MapPickerModal';
+import { MediaPicker } from './MediaPicker';
+import { TaskCategoryPicker } from './TaskCategoryPicker';
+import { TaskMemberEmailPicker, TaskMemberSelection } from './TaskMemberEmailPicker';
+import { TaskRecurrenceSelector } from './TaskRecurrenceSelector';
+import { VoiceTaskButton } from './VoiceTaskButton';
+import { usePermissions } from '../hooks/usePermitions';
+import {
+    encodeWeekdays,
+    normalizeRecurrenceStartDate,
+    TaskRecurrenceType,
+} from '@/src/utils/taskRecurrence';
+import { touchForSync } from '@/src/utils/syncMetadata';
+import { enqueueSyncAction } from '@/src/database/syncQueue';
+import { taskPayload, toServerId } from '@/src/utils/syncPayloads';
 
 interface Props {
     isVisible: boolean;
@@ -37,13 +55,22 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState<ValidTaskPriority>('');
-    const [date, setDate] = useState<Date | null>(new Date());
+    const [date, setDate] = useState<Date | null>(null);
     const [time, setTime] = useState<Date | null>(null);
+    const [recurrenceType, setRecurrenceType] = useState<TaskRecurrenceType>('none');
+    const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+    const [selectedMembers, setSelectedMembers] = useState<TaskMemberSelection[]>([]);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [mediaList, setMediaList] = useState<LocalMedia[]>([]);
+    const [location, setLocation] = useState<{ latitude: number; longitude: number; address: string } | null>(null);
+    const [showMapPicker, setShowMapPicker] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
+    const { scheduleDeadlineWarning, sendGeofenceNotification } = useTaskNotification();
+    const { hasLocationPermission, hasNotificationPermission, requestNotificationPermission, requestLocationPermission, checkPermissions } = usePermissions();
 
     useEffect(() => {
         const showSub = Keyboard.addListener('keyboardDidShow', () => {
@@ -54,13 +81,29 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
         return () => { showSub.remove(); hideSub.remove(); };
     }, []);
 
+    useEffect(() => {
+        if (!isVisible || !user?.id) return;
+
+        const loadCategories = async () => {
+            const rows = await database.get<Category>('categories').query().fetch();
+            setCategories(rows.filter((category) => category.createdBy === user.id));
+        };
+
+        loadCategories().catch((error) => console.error('Erro ao carregar categorias:', error));
+    }, [isVisible, user?.id]);
+
     const reset = () => {
         setTitle('');
         setDescription('');
         setPriority('');
         setDate(null);
         setTime(null);
+        setRecurrenceType('none');
+        setRecurrenceWeekdays([]);
+        setSelectedCategoryIds([]);
+        setSelectedMembers([]);
         setMediaList([]);
+        setLocation(null);
     };
 
     const handleClose = () => { reset(); onClose(); };
@@ -79,35 +122,72 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
         if (!title.trim()) return;
         if (!user?.id) throw new Error('Usuário não autenticado');
 
-        const deadline = (() => {
-            if (date) {
-                if (time) {
-                    const combined = new Date(date);
-                    combined.setHours(time.getHours(), time.getMinutes(), 0, 0);
-                    return combined;
-                }
-                return date;
-            }
-            return null;
-        })();
-
         try {
+            const recurrenceDate = normalizeRecurrenceStartDate(date, recurrenceType);
+            const localDateStr = recurrenceDate ? format(recurrenceDate, 'yyyy-MM-dd') : undefined;
+            const localTimeStr = time ? format(time, 'HH:mm') : undefined;
+            const safeRecurrenceWeekdays = recurrenceType === 'weekdays'
+                ? recurrenceWeekdays.length > 0 ? recurrenceWeekdays : [recurrenceDate?.getDay() ?? new Date().getDay()]
+                : [];
+
+            const deadlineForNotification = (() => {
+                if (!date) return null;
+                const combined = new Date(date);
+                combined.setHours(
+                    time ? time.getHours() : 0,
+                    time ? time.getMinutes() : 0,
+                    0, 0,
+                );
+                return combined;
+            })();
+
+            let newTaskId: string = '';
+            let newTaskTitle = title.trim();
+            let createdTask: Task | null = null;
+
             await database.write(async () => {
                 const newTask = await database.get<Task>('tasks').create(task => {
-                    task.title = title.trim();
+                    task.title = newTaskTitle;
                     task.description = description;
                     task.priority = priority;
                     task.status = 'pending';
                     task.createdBy = user.id;
-                    task.deadline = deadline ?? undefined;
+                    task.deadlineDate = localDateStr;
+                    task.deadlineTime = localTimeStr;
+                    task.recurrenceType = recurrenceType;
+                    task.recurrenceWeekdays = encodeWeekdays(safeRecurrenceWeekdays);
                     task.serverId = Crypto.randomUUID();
+                    touchForSync(task);
+                    if (location) {
+                        (task as any).latitude = location.latitude;
+                        (task as any).longitude = location.longitude;
+                        (task as any).address = location.address;
+                    }
                 });
 
                 await database.get<TaskMember>('task_members').create(member => {
                     member.taskId = newTask.id;
                     member.userId = user.id;
                     member.userName = user.name;
+                    touchForSync(member);
                 });
+
+                for (const selectedMember of selectedMembers) {
+                    await database.get<TaskMember>('task_members').create(member => {
+                        member.taskId = newTask.id;
+                        member.userId = selectedMember.id;
+                        member.userName = selectedMember.name;
+                        touchForSync(member);
+                    });
+                }
+
+                for (const categoryId of selectedCategoryIds) {
+                    await database.get<TaskCategory>('task_categories').create((item) => {
+                        item.taskId = newTask.id;
+                        item.categoryId = categoryId;
+                        touchForSync(item);
+                    });
+                }
 
                 for (const m of mediaList) {
                     await database.get<Media>('media').create(media => {
@@ -118,9 +198,57 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
                         media.type = m.type;
                         media.size = m.size;
                         media.taskId = newTask.id;
+                        touchForSync(media);
                     });
                 }
+
+                newTaskId = newTask.id;
+                createdTask = newTask;
             });
+
+            if (createdTask) {
+                const nextTaskPayload = taskPayload(createdTask);
+                const categoryIds = selectedCategoryIds
+                    .map((id) => categories.find((category) => category.id === id))
+                    .filter(Boolean)
+                    .map((category) => toServerId(category as Category));
+
+                await enqueueSyncAction('task.create', {
+                    task: nextTaskPayload,
+                    categoryIds,
+                    memberIds: selectedMembers.map((member) => member.id),
+                    members: selectedMembers.map((member) => ({
+                        id: member.id,
+                        name: member.name,
+                        email: member.email,
+                    })),
+                    media: mediaList.map((item) => ({
+                        id: item.serverId || Crypto.randomUUID(),
+                        taskId: nextTaskPayload.id,
+                        name: item.name,
+                        url: item.url,
+                        mimeType: item.mimeType,
+                        type: item.type,
+                        size: item.size,
+                        updatedAt: new Date().toISOString(),
+                    })),
+                });
+            }
+
+            if (deadlineForNotification && hasNotificationPermission) {
+                await scheduleDeadlineWarning(newTaskId, newTaskTitle, deadlineForNotification, 60);
+                await scheduleDeadlineWarning(newTaskId, newTaskTitle, deadlineForNotification, 24 * 60);
+            }
+
+            const permissionSnapshot = location ? await checkPermissions() : null;
+            if (location && permissionSnapshot?.location && permissionSnapshot.notification) {
+                await sendGeofenceNotification(
+                    newTaskId,
+                    newTaskTitle,
+                    location.latitude,
+                    location.longitude,
+                );
+            }
 
             reset();
             onClose();
@@ -129,9 +257,17 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
         }
     };
 
+    const handleVoiceParsed = (parsed: any) => {
+        if (parsed.title) setTitle(parsed.title);
+        if (parsed.description) setDescription(parsed.description);
+        if (parsed.priority) setPriority(parsed.priority);
+        if (parsed.date) setDate(parsed.date);
+        if (parsed.time) setTime(parsed.time);
+    };
+
     return (
         <Modal visible={isVisible} animationType="slide" transparent onRequestClose={handleClose}>
-            {/* Overlay */}
+
             <View style={StyleSheet.absoluteFill}>
                 <TouchableWithoutFeedback onPress={handleClose}>
                     <View style={{ flex: 1, backgroundColor: colors.modalOverlay }} />
@@ -214,6 +350,40 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
                                 })}
                             </View>
 
+                            <View style={styles.relationsRow}>
+                                <View style={styles.relationColumn}>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Categorias</Text>
+                                    <TaskCategoryPicker
+                                        categories={categories}
+                                        selectedCategoryIds={selectedCategoryIds}
+                                        onChange={setSelectedCategoryIds}
+                                    />
+                                </View>
+                                <View style={styles.relationColumn}>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Membros</Text>
+                                    <TaskMemberEmailPicker
+                                        selectedMembers={selectedMembers}
+                                        currentUserId={user?.id}
+                                        onChange={setSelectedMembers}
+                                    />
+                                </View>
+                            </View>
+
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Recorrência</Text>
+                            <TaskRecurrenceSelector
+                                recurrenceType={recurrenceType}
+                                selectedWeekdays={recurrenceWeekdays}
+                                anchorDate={date}
+                                onChangeType={(type) => {
+                                    setRecurrenceType(type);
+                                    if (type !== 'weekdays') setRecurrenceWeekdays([]);
+                                    if (type === 'weekdays' && recurrenceWeekdays.length === 0) {
+                                        setRecurrenceWeekdays([date?.getDay() ?? new Date().getDay()]);
+                                    }
+                                }}
+                                onChangeWeekdays={setRecurrenceWeekdays}
+                            />
+
                             <Text style={[styles.label, { color: colors.textSecondary }]}>Data e hora</Text>
                             <View style={styles.datetimeContainer}>
                                 <View style={styles.datetimeRow}>
@@ -223,7 +393,12 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
                                             backgroundColor: colors.inputBackground,
                                             borderColor: date ? colors.primary : colors.inputBorder,
                                         }]}
-                                        onPress={() => setShowDatePicker(true)}
+                                        onPress={async () => {
+                                            if (!hasNotificationPermission) {
+                                                await requestNotificationPermission();
+                                            }
+                                            setShowDatePicker(true);
+                                        }}
                                         activeOpacity={0.7}
                                     >
                                         <Ionicons name="calendar-outline" size={18} color={date ? colors.primary : colors.inputIcon} />
@@ -250,7 +425,10 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
                                             backgroundColor: colors.inputBackground,
                                             borderColor: time ? colors.primary : colors.inputBorder,
                                         }]}
-                                        onPress={() => setShowTimePicker(true)}
+                                        onPress={() => {
+                                            if (!date) setDate(new Date());
+                                            setShowTimePicker(true);
+                                        }}
                                         activeOpacity={0.7}
                                     >
                                         <Ionicons name="time-outline" size={18} color={!date ? colors.inputIcon : colors.primary} />
@@ -289,7 +467,35 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
                                 />
                             )}
 
-                            {/* MediaPicker — só seleciona, passa payload para cima */}
+                            <Text style={[styles.label, { color: colors.textSecondary }]}>Localização (Geofencing)</Text>
+                            <TouchableOpacity
+                                style={[styles.datetimeInput, {
+                                    backgroundColor: colors.inputBackground,
+                                    borderColor: location ? colors.primary : colors.inputBorder,
+                                    marginBottom: 14
+                                }]}
+                                onPress={async () => {
+                                    if (!hasLocationPermission) {
+                                        await requestLocationPermission();
+                                    }
+                                    if (!hasNotificationPermission) {
+                                        await requestNotificationPermission();
+                                    }
+                                    setShowMapPicker(true);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="location-outline" size={18} color={location ? colors.primary : colors.inputPlaceholder} />
+                                <Text style={{ color: location ? colors.text : colors.inputPlaceholder, flex: 1, marginLeft: 10, fontSize: 15 }} numberOfLines={1}>
+                                    {location ? location.address || 'Local selecionado' : 'Selecionar no mapa'}
+                                </Text>
+                                {location && (
+                                    <TouchableOpacity style={[styles.clearBtn, { width: 24, height: 24 }]} onPress={() => setLocation(null)} activeOpacity={0.7}>
+                                        <Ionicons name="close" size={18} color={colors.danger} />
+                                    </TouchableOpacity>
+                                )}
+                            </TouchableOpacity>
+
                             <MediaPicker
                                 onChangeMedia={setMediaList}
                                 maxFiles={10}
@@ -306,11 +512,23 @@ export function CreateTaskModal({ isVisible, onClose }: Props) {
                                         Criar Tarefa
                                     </Text>
                                 </TouchableOpacity>
+
+                                <VoiceTaskButton onParsed={handleVoiceParsed} />
                             </View>
                         </ScrollView>
                     </View>
                 </View>
             </KeyboardAvoidingView>
+
+            <MapPickerModal
+                isVisible={showMapPicker}
+                onClose={() => setShowMapPicker(false)}
+                onSelect={(loc) => {
+                    setLocation(loc);
+                    setShowMapPicker(false);
+                }}
+                initialLocation={location}
+            />
         </Modal>
     );
 }
@@ -380,6 +598,16 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '500',
     },
+    relationsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginBottom: 2,
+    },
+    relationColumn: {
+        flex: 1,
+        minWidth: 150,
+    },
     datetimeContainer: {
         flexDirection: 'column',
     },
@@ -410,10 +638,11 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     saveBtn: {
-        flex: 2,
+        flex: 1,
         padding: 15,
         borderRadius: 12,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     saveText: {
         fontWeight: '700',

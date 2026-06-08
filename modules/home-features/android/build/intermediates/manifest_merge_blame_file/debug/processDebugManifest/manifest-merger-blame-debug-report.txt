@@ -1,0 +1,42 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.agendinha.homefeatures" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6
+7    <application>
+7-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:2:3-19:17
+8        <activity android:name="com.lucas_martins.AGENDINHA.MainActivity" >
+8-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:3:5-7:16
+8-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:3:15-70
+9            <meta-data
+9-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:4:7-6:45
+10                android:name="android.app.shortcuts"
+10-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:5:9-45
+11                android:resource="@xml/shortcuts" />
+11-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:6:9-42
+12        </activity>
+13
+14        <receiver
+14-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:9:5-18:16
+15            android:name="com.agendinha.homefeatures.AgendaWidgetProvider"
+15-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:10:7-69
+16            android:exported="true" >
+16-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:11:7-30
+17            <intent-filter>
+17-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:12:7-14:23
+18                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+18-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:13:9-76
+18-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:13:17-73
+19            </intent-filter>
+20
+21            <meta-data
+21-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:15:7-17:54
+22                android:name="android.appwidget.provider"
+22-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:16:9-50
+23                android:resource="@xml/agenda_widget_info" />
+23-->/home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:17:9-51
+24        </receiver>
+25    </application>
+26
+27</manifest>

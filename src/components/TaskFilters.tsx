@@ -7,7 +7,7 @@ import { useTheme } from '@/src/contexts/ThemeContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
-type FilterType = 'category' | 'status' | 'priority' | 'dateRange' | 'createdByMe' | 'members';
+type FilterType = 'category' | 'status' | 'priority' | 'dateRange' | 'withoutDate' | 'createdByMe' | 'members';
 
 interface Props {
   categories?: Category[];
@@ -20,6 +20,8 @@ interface Props {
   setSelectedPriorities?: (priorities: string[]) => void;
   selectedDateRange?: { start: Date | null; end: Date | null };
   setSelectedDateRange?: (range: { start: Date | null; end: Date | null }) => void;
+  withoutDate?: boolean;
+  setWithoutDate?: (withoutDate: boolean) => void;
   createdByMe?: string;
   setCreatedByMe?: (createdByMe: string) => void;
   selectedMembers?: string[];
@@ -42,6 +44,8 @@ export function TaskFilters({
   setSelectedMembers,
   selectedDateRange,
   setSelectedDateRange,
+  withoutDate,
+  setWithoutDate,
   enabledFilters,
 }: Props) {
   const { colors } = useTheme();
@@ -181,6 +185,7 @@ export function TaskFilters({
       {/* Intervalo de datas */}
       {isVisible('dateRange') && (
         <View style={styles.section}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Data</Text>
           <View style={styles.datetimeContainer}>
             <View style={styles.datetimeRow}>
               <TouchableOpacity
@@ -197,8 +202,8 @@ export function TaskFilters({
                   size={18}
                   color={selectedDateRange?.start ? colors.primary : colors.inputIcon}
                 />
-                <Text style={{ color: selectedDateRange?.start ? colors.text : colors.inputPlaceholder, flex: 1, marginLeft: 10, fontSize: 15 }}>
-                  {selectedDateRange?.start ? selectedDateRange.start.toLocaleDateString('pt-BR') : 'Selecionar data'}
+                <Text style={[styles.datetimeText, { color: selectedDateRange?.start ? colors.text : colors.inputPlaceholder }]}>
+                  {selectedDateRange?.start ? selectedDateRange.start.toLocaleDateString('pt-BR') : 'Data inicial'}
                 </Text>
               </TouchableOpacity>
 
@@ -225,15 +230,14 @@ export function TaskFilters({
                 }]}
                 onPress={() => setShowDatePicker('end')}
                 activeOpacity={0.7}
-                disabled={!selectedDateRange?.start}
               >
                 <Ionicons
                   name="calendar-outline"
                   size={18}
                   color={selectedDateRange?.end ? colors.primary : colors.inputIcon}
                 />
-                <Text style={{ color: selectedDateRange?.end ? colors.text : colors.inputPlaceholder, flex: 1, marginLeft: 10, fontSize: 15 }}>
-                  {selectedDateRange?.end ? selectedDateRange.end.toLocaleDateString('pt-BR') : 'Selecionar data'}
+                <Text style={[styles.datetimeText, { color: selectedDateRange?.end ? colors.text : colors.inputPlaceholder }]}>
+                  {selectedDateRange?.end ? selectedDateRange.end.toLocaleDateString('pt-BR') : 'Data final'}
                 </Text>
               </TouchableOpacity>
 
@@ -255,6 +259,28 @@ export function TaskFilters({
         </View>
       )}
 
+      {isVisible('withoutDate') && setWithoutDate && (
+        <View style={styles.section}>
+          <TouchableOpacity
+            onPress={() => setWithoutDate(!withoutDate)}
+            style={[
+              styles.chip,
+              {
+                alignSelf: 'flex-start',
+                backgroundColor: withoutDate ? colors.warningSurface : colors.surface,
+                borderColor: withoutDate ? colors.warning : colors.border,
+              },
+            ]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar-clear-outline" size={15} color={withoutDate ? colors.warning : colors.textMuted} />
+            <Text style={[styles.chipText, { color: withoutDate ? colors.warning : colors.textSecondary }]}>
+              Sem data
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {showDatePicker && (
         <DateTimePicker
           value={selectedDateRange?.[showDatePicker] || new Date()}
@@ -263,7 +289,6 @@ export function TaskFilters({
           onChange={(event, date) => {
             toggleDateRange(showDatePicker, date || null);
           }}
-          minimumDate={new Date()}
         />
       )}
 
@@ -404,6 +429,11 @@ const styles = StyleSheet.create({
         padding: 14,
         borderRadius: 12,
         borderWidth: StyleSheet.hairlineWidth,
+    },
+    datetimeText: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 15,
     },
     clearBtn: {
         width: 44,

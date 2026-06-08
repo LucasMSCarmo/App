@@ -14,6 +14,8 @@ export default class Media extends Model {
   @text('type') type!: string;
   @field('size') size!: number;
   @text('task_id') taskId!: string;
+  @field('updated_at') updatedAt?: number;
+  @field('deleted_at') deletedAt?: number;
 
   @relation('task', 'task_id') task!: any;
 }

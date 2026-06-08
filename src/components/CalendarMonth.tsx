@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { FlatList, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Calendar } from 'react-native-calendars';
 import { database } from '@/src/database';
-import withObservables from '@nozbe/with-observables';
-import { Q } from '@nozbe/watermelondb';
 import Task from '@/src/database/model/Task';
+import { Q } from '@nozbe/watermelondb';
+import withObservables from '@nozbe/with-observables';
+import React, { useState } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { useTheme } from '../contexts/ThemeContext';
 import TaskItem from './TaskItem';
 
@@ -18,23 +18,14 @@ function toCalendarDateString(date: Date): string {
 // ─── Lista reativa por dia ────────────────────────────────────────────────────
 
 const TasksList = withObservables(['selectedDate'], ({ selectedDate }: { selectedDate: Date }) => {
-    const startOfDay = new Date(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth(),
-        selectedDate.getDate(),
-        0, 0, 0, 0,
-    );
-
-    const endOfDay = new Date(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth(),
-        selectedDate.getDate(),
-        23, 59, 59, 999,
-    );
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
     return {
         tasks: database.get<Task>('tasks')
-            .query(Q.where('deadline', Q.between(startOfDay.getTime(), endOfDay.getTime())))
+            .query(Q.where('deadline_date', dateStr))
             .observe(),
     };
 })(({ tasks, colors }: { tasks: Task[]; colors: any }) => (

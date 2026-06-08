@@ -34,5 +34,20 @@ export const taskService = {
   async addMember(taskId: string, memberId: string) {
     const response = await api.post(`/tasks/${taskId}/members`, { memberId });
     return response.data;
-  }
+  },
+
+  async removeMember(taskId: string, memberId: string) {
+    const response = await api.delete(`/tasks/${taskId}/members/${memberId}`);
+    return response.data;
+  },
+
+  async getComments(taskId: string) {
+    const response = await api.get(`/tasks/${taskId}/comments`);
+    return response.data;
+  },
+
+  async createComment(taskId: string, body: string) {
+    const response = await api.post(`/tasks/${taskId}/comments`, { body });
+    return response.data;
+  },
 };

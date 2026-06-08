@@ -5,17 +5,22 @@ import {
 } from 'react-native';
 import { database } from '@/src/database';
 import Subtask from '@/src/database/model/Subtask';
+import Task from '@/src/database/model/Task';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import * as Crypto from 'expo-crypto';
+import { touchForSync } from '@/src/utils/syncMetadata';
+import { enqueueSyncAction } from '@/src/database/syncQueue';
+import { subtaskPayload } from '@/src/utils/syncPayloads';
 
 interface Props {
     taskId: string;
+    task?: Task;
     subtaskCount: number;
     isVisible: boolean;
     onClose: () => void;
 }
 
-export function CreateSubtaskModal({ taskId, subtaskCount, isVisible, onClose }: Props) {
+export function CreateSubtaskModal({ taskId, task, subtaskCount, isVisible, onClose }: Props) {
     const { colors } = useTheme();
     const [name, setName] = useState('');
     const [details, setDetails] = useState('');
@@ -38,16 +43,23 @@ export function CreateSubtaskModal({ taskId, subtaskCount, isVisible, onClose }:
     const handleSave = async () => {
         if (!name.trim()) return;
         try {
+            let createdSubtask: Subtask | null = null;
             await database.write(async () => {
-                await database.get<Subtask>('subtasks').create(subtask => {
+                createdSubtask = await database.get<Subtask>('subtasks').create(subtask => {
                     subtask.name = name.trim();
                     subtask.details = details;
                     subtask.status = false;
                     subtask.order = subtaskCount;
                     subtask.serverId = Crypto.randomUUID();
                     subtask.taskId = taskId;
+                    touchForSync(subtask);
                 });
             });
+            if (createdSubtask) {
+                await enqueueSyncAction('subtask.create', {
+                    subtask: subtaskPayload(createdSubtask, task),
+                });
+            }
             reset();
         } catch (error) {
             console.error('Erro ao salvar subtask:', error);

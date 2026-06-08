@@ -18,16 +18,30 @@ import { map } from 'rxjs/operators';
 // ─── Lista reativa ────────────────────────────────────────────────────────────
 
 const TasksList = withObservables(
-    ['selectedCategories', 'selectedStatus', 'selectedPriorities', 'dateRange', 'createdByMe', 'selectedMembers'],
-    ({ selectedCategories, selectedStatus, selectedPriorities, dateRange, createdByMe, selectedMembers, userId }: any) => {
+    ['selectedCategories', 'selectedStatus', 'selectedPriorities', 'dateRange', 'withoutDate', 'createdByMe', 'selectedMembers'],
+    ({ selectedCategories, selectedStatus, selectedPriorities, dateRange, withoutDate, createdByMe, selectedMembers, userId }: any) => {
         const conditions = [];
         const validSelectedPriorities = selectedPriorities ? selectedPriorities.map((p: string) => p === 'none' ? '' : p) : [];
+        const toLocalDate = (value: Date) => {
+            const year = value.getFullYear();
+            const month = String(value.getMonth() + 1).padStart(2, '0');
+            const day = String(value.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
 
         if (selectedCategories.length > 0) conditions.push(Q.on('task_categories', 'category_id', Q.oneOf(selectedCategories)));
         if (selectedStatus.length > 0) conditions.push(Q.where('status', Q.oneOf(selectedStatus)));
         if (selectedPriorities.length > 0) conditions.push(Q.where('priority', Q.oneOf(validSelectedPriorities)));
-        if (dateRange.start && !dateRange.end) conditions.push(Q.where('deadline', Q.gte(dateRange.start.getTime())));
-        if (dateRange.start && dateRange.end) conditions.push(Q.where('deadline', Q.between(dateRange.start.getTime(), dateRange.end.getTime())));
+        if (withoutDate) {
+            conditions.push(Q.where('deadline_date', Q.eq(null)));
+        } else {
+            if (dateRange.start && !dateRange.end) conditions.push(Q.where('deadline_date', Q.gte(toLocalDate(dateRange.start))));
+            if (!dateRange.start && dateRange.end) conditions.push(Q.where('deadline_date', Q.lte(toLocalDate(dateRange.end))));
+            if (dateRange.start && dateRange.end) {
+                conditions.push(Q.where('deadline_date', Q.gte(toLocalDate(dateRange.start))));
+                conditions.push(Q.where('deadline_date', Q.lte(toLocalDate(dateRange.end))));
+            }
+        }
         if (createdByMe === 'me') conditions.push(Q.where('created_by', userId));
         if (selectedMembers.length > 0) conditions.push(Q.on('task_members', 'user_id', Q.oneOf(selectedMembers)));
 
@@ -62,6 +76,7 @@ function TasksContent({ categories, members }: { categories: Category[]; members
     const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
     const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
     const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+    const [withoutDate, setWithoutDate] = useState(false);
     const [createdByMe, setCreatedByMe] = useState<string>('me');
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
@@ -71,7 +86,7 @@ function TasksContent({ categories, members }: { categories: Category[]; members
         selectedCategories.length > 0,
         selectedStatus.length > 0,
         selectedPriorities.length > 0,
-        dateRange.start || dateRange.end,
+        dateRange.start || dateRange.end || withoutDate,
         createdByMe === 'me',
         selectedMembers.length > 0,
     ].filter(Boolean).length;
@@ -138,6 +153,7 @@ function TasksContent({ categories, members }: { categories: Category[]; members
                 selectedStatus={selectedStatus}
                 selectedPriorities={selectedPriorities}
                 dateRange={dateRange}
+                withoutDate={withoutDate}
                 createdByMe={createdByMe}
                 selectedMembers={selectedMembers}
                 userId={user?.id ?? null}
@@ -157,11 +173,16 @@ function TasksContent({ categories, members }: { categories: Category[]; members
                     setSelectedPriorities={setSelectedPriorities}
                     selectedDateRange={dateRange}
                     setSelectedDateRange={setDateRange}
+                    withoutDate={withoutDate}
+                    setWithoutDate={(value) => {
+                        setWithoutDate(value);
+                        if (value) setDateRange({ start: null, end: null });
+                    }}
                     createdByMe={createdByMe}
                     setCreatedByMe={setCreatedByMe}
                     selectedMembers={selectedMembers}
                     setSelectedMembers={setSelectedMembers}
-                    enabledFilters={['category', 'status', 'priority', 'dateRange', 'createdByMe', 'members']}
+                    enabledFilters={['category', 'status', 'priority', 'dateRange', 'withoutDate', 'createdByMe', 'members']}
                 />
             </Sidebar>
 

@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["AgendinhaProximityModule"]
+  },
+  "android": {
+    "modules": ["com.agendinha.proximity.AgendinhaProximityModule"]
+  }
+}

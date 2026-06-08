@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'https://agendinha-api-c8qk.onrender.com',
   timeout: 10000,
 });
 

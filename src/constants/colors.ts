@@ -67,7 +67,7 @@ export const Colors = {
     primary: palette.primary,
     primaryLight: palette.primaryLight,
     primaryDark: palette.primaryDark,
-    primarySurface: '#EEEDff',      // fundo sutil com tom primário
+    primarySurface: '#EEEDff',
 
     // === FEEDBACK ===
     danger: palette.danger,
@@ -114,19 +114,23 @@ export const Colors = {
     calendarHeaderText: '#1A1A1A',
     calendarDayText: '#1A1A1A',
     calendarDayTextDisabled: palette.gray400,
-    calendarDayTextSecondary: palette.gray500,       // dias de outros meses
+    calendarDayTextSecondary: palette.gray500,
     calendarDaySelected: palette.primary,
     calendarDaySelectedText: palette.white,
     calendarDayToday: '#EEEDff',
     calendarDayTodayText: palette.primary,
     calendarDayTodayBorder: palette.primary,
-    calendarDayHasEvent: palette.primary,            // ponto indicador de evento
-    calendarWeekHeader: palette.gray500,             // seg, ter, qua...
+    calendarDayHasEvent: palette.primary,
+    calendarWeekHeader: palette.gray500,
     calendarCardBackground: palette.white,
     calendarCardBorder: palette.gray200,
     calendarCardText: '#1A1A1A',
     calendarCardTimeText: palette.gray500,
     calendarCardCategory: palette.primaryLight,
+    // tema do componente react-native-calendars
+    calendarThemeBg: 'transparent',
+    calendarThemeArrow: palette.primary,
+    calendarThemeDisabledArrow: palette.gray400,
 
     // === SIDEBAR / DRAWER ===
     sidebarBackground: palette.white,
@@ -194,6 +198,7 @@ export const Colors = {
     skeletonBase: palette.gray200,
     skeletonHighlight: palette.gray100,
 
+    // === MEDIA PICKER ===
     mediaBorder: '#C5C2FF',
     mediaSurface: '#F5F4FF',
   },
@@ -282,6 +287,10 @@ export const Colors = {
     calendarCardText: '#F1F1F1',
     calendarCardTimeText: palette.gray500,
     calendarCardCategory: palette.primaryDark,
+    // tema do componente react-native-calendars
+    calendarThemeBg: 'transparent',
+    calendarThemeArrow: palette.primaryLight,
+    calendarThemeDisabledArrow: palette.dark600,
 
     // === SIDEBAR / DRAWER ===
     sidebarBackground: palette.dark100,
@@ -349,6 +358,7 @@ export const Colors = {
     skeletonBase: palette.dark300,
     skeletonHighlight: palette.dark400,
 
+    // === MEDIA PICKER ===
     mediaBorder: '#3D3870',
     mediaSurface: '#1A1830',
   },

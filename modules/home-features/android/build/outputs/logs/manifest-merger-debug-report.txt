@@ -1,0 +1,46 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:1:1-20:12
+INJECTED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:1:1-20:12
+	package
+		INJECTED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:1:11-69
+application
+ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:2:3-19:17
+activity#com.lucas_martins.AGENDINHA.MainActivity
+ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:3:5-7:16
+	android:name
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:3:15-70
+meta-data#android.app.shortcuts
+ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:4:7-6:45
+	android:resource
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:6:9-42
+	android:name
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:5:9-45
+receiver#com.agendinha.homefeatures.AgendaWidgetProvider
+ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:9:5-18:16
+	android:exported
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:11:7-30
+	android:name
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:10:7-69
+intent-filter#action:name:android.appwidget.action.APPWIDGET_UPDATE
+ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:12:7-14:23
+action#android.appwidget.action.APPWIDGET_UPDATE
+ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:13:9-76
+	android:name
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:13:17-73
+meta-data#android.appwidget.provider
+ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:15:7-17:54
+	android:resource
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:17:9-51
+	android:name
+		ADDED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml:16:9-50
+uses-sdk
+INJECTED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml
+INJECTED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/lucas/Desktop/AGENDINHA/modules/home-features/android/src/main/AndroidManifest.xml

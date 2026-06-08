@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="widget_description">Tarefas de hoje da Agendinha</string>
+  <string name="quick_create_short_label">Nova tarefa</string>
+  <string name="quick_create_long_label">Criar tarefa rápida</string>
+</resources>

@@ -1,0 +1,10 @@
+{
+  "name": "agendinha-home-features",
+  "version": "1.0.0",
+  "description": "Android home widget and quick action support for Agendinha.",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "peerDependencies": {
+    "expo": "*"
+  }
+}

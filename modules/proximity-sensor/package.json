@@ -1,0 +1,10 @@
+{
+  "name": "agendinha-proximity-sensor",
+  "version": "1.0.0",
+  "description": "Local Expo module for proximity sensor events.",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "peerDependencies": {
+    "expo": "*"
+  }
+}

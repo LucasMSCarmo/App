@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style name="WidgetTaskRow">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">34dp</item>
+    <item name="android:layout_marginTop">4dp</item>
+    <item name="android:background">@drawable/widget_task_background</item>
+    <item name="android:gravity">center_vertical</item>
+    <item name="android:orientation">horizontal</item>
+    <item name="android:paddingLeft">9dp</item>
+    <item name="android:paddingRight">7dp</item>
+  </style>
+
+  <style name="WidgetTaskStatus">
+    <item name="android:layout_width">22dp</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:gravity">center_vertical</item>
+    <item name="android:textColor">@color/widget_primary</item>
+    <item name="android:textSize">17sp</item>
+    <item name="android:textStyle">bold</item>
+  </style>
+
+  <style name="WidgetTaskText">
+    <item name="android:layout_width">0dp</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:layout_weight">1</item>
+    <item name="android:ellipsize">end</item>
+    <item name="android:maxLines">1</item>
+    <item name="android:textColor">@color/widget_text</item>
+    <item name="android:textSize">13sp</item>
+  </style>
+
+  <style name="WidgetTaskTime">
+    <item name="android:layout_width">wrap_content</item>
+    <item name="android:layout_height">24dp</item>
+    <item name="android:layout_marginLeft">6dp</item>
+    <item name="android:background">@drawable/widget_time_background</item>
+    <item name="android:gravity">center</item>
+    <item name="android:minWidth">48dp</item>
+    <item name="android:paddingLeft">7dp</item>
+    <item name="android:paddingRight">7dp</item>
+    <item name="android:textColor">@color/widget_primary</item>
+    <item name="android:textSize">11sp</item>
+    <item name="android:textStyle">bold</item>
+  </style>
+</resources>

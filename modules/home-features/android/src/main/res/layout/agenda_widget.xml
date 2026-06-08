@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/widget_container"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@drawable/widget_background"
+  android:orientation="vertical"
+  android:padding="14dp">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical">
+
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="AGENDINHA"
+        android:textColor="@color/widget_primary"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+      <TextView
+        android:id="@+id/widget_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:text="Hoje"
+        android:textColor="@color/widget_text"
+        android:textSize="17sp"
+        android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+      android:id="@+id/widget_add"
+      android:layout_width="36dp"
+      android:layout_height="36dp"
+      android:background="@drawable/widget_add_background"
+      android:contentDescription="Criar tarefa"
+      android:gravity="center"
+      android:text="+"
+      android:textColor="@color/widget_add_text"
+      android:textSize="25sp" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <TextView
+      android:id="@+id/widget_summary"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:maxLines="1"
+      android:text="Seu dia está livre"
+      android:textColor="@color/widget_text_secondary"
+      android:textSize="11sp" />
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="HOJE"
+      android:textColor="@color/widget_text_muted"
+      android:textSize="9sp"
+      android:textStyle="bold" />
+  </LinearLayout>
+
+  <ProgressBar
+    android:id="@+id/widget_progress"
+    style="?android:attr/progressBarStyleHorizontal"
+    android:layout_width="match_parent"
+    android:layout_height="4dp"
+    android:layout_marginTop="6dp"
+    android:max="1"
+    android:progress="0"
+    android:progressDrawable="@drawable/widget_progress" />
+
+  <TextView
+    android:id="@+id/widget_empty"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:gravity="center"
+    android:text="Nenhuma tarefa para hoje"
+    android:textColor="@color/widget_text_secondary"
+    android:textSize="13sp" />
+
+  <LinearLayout
+    android:id="@+id/widget_task_row_1"
+    style="@style/WidgetTaskRow">
+    <TextView
+      android:id="@+id/widget_task_status_1"
+      style="@style/WidgetTaskStatus" />
+    <TextView
+      android:id="@+id/widget_task_1"
+      style="@style/WidgetTaskText" />
+    <TextView
+      android:id="@+id/widget_task_time_1"
+      style="@style/WidgetTaskTime" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_task_row_2"
+    style="@style/WidgetTaskRow">
+    <TextView
+      android:id="@+id/widget_task_status_2"
+      style="@style/WidgetTaskStatus" />
+    <TextView
+      android:id="@+id/widget_task_2"
+      style="@style/WidgetTaskText" />
+    <TextView
+      android:id="@+id/widget_task_time_2"
+      style="@style/WidgetTaskTime" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_task_row_3"
+    style="@style/WidgetTaskRow">
+    <TextView
+      android:id="@+id/widget_task_status_3"
+      style="@style/WidgetTaskStatus" />
+    <TextView
+      android:id="@+id/widget_task_3"
+      style="@style/WidgetTaskText" />
+    <TextView
+      android:id="@+id/widget_task_time_3"
+      style="@style/WidgetTaskTime" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_task_row_4"
+    style="@style/WidgetTaskRow">
+    <TextView
+      android:id="@+id/widget_task_status_4"
+      style="@style/WidgetTaskStatus" />
+    <TextView
+      android:id="@+id/widget_task_4"
+      style="@style/WidgetTaskText" />
+    <TextView
+      android:id="@+id/widget_task_time_4"
+      style="@style/WidgetTaskTime" />
+  </LinearLayout>
+
+  <TextView
+    android:id="@+id/widget_footer"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:gravity="bottom"
+    android:layout_marginTop="3dp"
+    android:maxLines="1"
+    android:textColor="@color/widget_text_secondary"
+    android:textSize="12sp" />
+</LinearLayout>

@@ -1,11 +1,15 @@
 import React, { useState, memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import withObservables from '@nozbe/with-observables';
 import Subtask from '@/src/database/model/Subtask';
+import Task from '@/src/database/model/Task';
 import { useTheme } from '@/src/contexts/ThemeContext';
+import { touchForSync } from '@/src/utils/syncMetadata';
+import { enqueueSyncAction } from '@/src/database/syncQueue';
+import { subtaskPayload } from '@/src/utils/syncPayloads';
 
-function SubtaskItem({ subtask, drag, isActive }: { subtask: Subtask; drag: () => void; isActive: boolean }) {
+function SubtaskItem({ subtask, task, drag, isActive }: { subtask: Subtask; task?: Task; drag: () => void; isActive: boolean }) {
     const { colors } = useTheme();
     const [expanded, setExpanded] = useState(false);
 
@@ -14,7 +18,11 @@ function SubtaskItem({ subtask, drag, isActive }: { subtask: Subtask; drag: () =
             await subtask.database.write(async () => {
                 await subtask.update((s: Subtask) => {
                     s.status = !s.status;
+                    touchForSync(s);
                 });
+            });
+            await enqueueSyncAction('subtask.update', {
+                subtask: subtaskPayload(subtask, task),
             });
         } catch (error) {
             console.error('Erro ao atualizar status:', error);

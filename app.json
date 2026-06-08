@@ -15,7 +15,17 @@
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
       "jsEngine": "hermes",
-      "package": "com.lucas_martins.AGENDINHA"
+      "package": "com.lucas_martins.AGENDINHA",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY_HERE"
+        }
+      }
     },
     "web": {
       "output": "static"
@@ -30,7 +40,26 @@
           "jsi": false
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Permitir acesso ao microfone para criar tarefas por voz.",
+          "speechRecognitionPermission": "Permitir reconhecimento de voz para preencher tarefas."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "notificationPermission": "Permitir notificações para lembrar de tarefas importantes."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permitir acesso à localização para notificar tarefas próximas."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

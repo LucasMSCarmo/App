@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { text } from '@nozbe/watermelondb/decorators';
+import { field, text } from '@nozbe/watermelondb/decorators';
 
 export default class Category extends Model {
   static table = 'categories';
@@ -11,4 +11,6 @@ export default class Category extends Model {
   @text('name') name!: string;
   @text('color') color!: string;
   @text('created_by') createdBy!: string;
+  @field('updated_at') updatedAt?: number;
+  @field('deleted_at') deletedAt?: number;
 }

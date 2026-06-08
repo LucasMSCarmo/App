@@ -13,6 +13,8 @@ export default class Subtask extends Model {
   @field('status') status!: boolean;
   @field('order') order!: number;
   @text('task_id') taskId!: string;
+  @field('updated_at') updatedAt?: number;
+  @field('deleted_at') deletedAt?: number;
 
   @relation('task', 'task_id') task!: any;
 }

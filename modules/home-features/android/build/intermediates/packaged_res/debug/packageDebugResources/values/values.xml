@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_add">#6C63FF</color>
+    <color name="widget_add_text">#FFFFFF</color>
+    <color name="widget_background">#FCFCFE</color>
+    <color name="widget_border">#E8E6ED</color>
+    <color name="widget_primary">#6C63FF</color>
+    <color name="widget_primary_soft">#E9E7FF</color>
+    <color name="widget_surface">#F4F3FA</color>
+    <color name="widget_task_done">#3F8F55</color>
+    <color name="widget_text">#202024</color>
+    <color name="widget_text_done">#737078</color>
+    <color name="widget_text_muted">#9A96A2</color>
+    <color name="widget_text_secondary">#66636C</color>
+    <string name="quick_create_long_label">Criar tarefa rápida</string>
+    <string name="quick_create_short_label">Nova tarefa</string>
+    <string name="widget_description">Tarefas de hoje da Agendinha</string>
+    <style name="WidgetTaskRow">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">34dp</item>
+    <item name="android:layout_marginTop">4dp</item>
+    <item name="android:background">@drawable/widget_task_background</item>
+    <item name="android:gravity">center_vertical</item>
+    <item name="android:orientation">horizontal</item>
+    <item name="android:paddingLeft">9dp</item>
+    <item name="android:paddingRight">7dp</item>
+  </style>
+    <style name="WidgetTaskStatus">
+    <item name="android:layout_width">22dp</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:gravity">center_vertical</item>
+    <item name="android:textColor">@color/widget_primary</item>
+    <item name="android:textSize">17sp</item>
+    <item name="android:textStyle">bold</item>
+  </style>
+    <style name="WidgetTaskText">
+    <item name="android:layout_width">0dp</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:layout_weight">1</item>
+    <item name="android:ellipsize">end</item>
+    <item name="android:maxLines">1</item>
+    <item name="android:textColor">@color/widget_text</item>
+    <item name="android:textSize">13sp</item>
+  </style>
+    <style name="WidgetTaskTime">
+    <item name="android:layout_width">wrap_content</item>
+    <item name="android:layout_height">24dp</item>
+    <item name="android:layout_marginLeft">6dp</item>
+    <item name="android:background">@drawable/widget_time_background</item>
+    <item name="android:gravity">center</item>
+    <item name="android:minWidth">48dp</item>
+    <item name="android:paddingLeft">7dp</item>
+    <item name="android:paddingRight">7dp</item>
+    <item name="android:textColor">@color/widget_primary</item>
+    <item name="android:textSize">11sp</item>
+    <item name="android:textStyle">bold</item>
+  </style>
+</resources>

@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { text, relation } from '@nozbe/watermelondb/decorators';
+import { field, text, relation } from '@nozbe/watermelondb/decorators';
 
 export default class TaskCategory extends Model {
   static table = 'task_categories';
@@ -10,6 +10,8 @@ export default class TaskCategory extends Model {
 
   @text('task_id') taskId!: string;
   @text('category_id') categoryId!: string;
+  @field('updated_at') updatedAt?: number;
+  @field('deleted_at') deletedAt?: number;
 
   @relation('tasks', 'task_id') task!: any;
   @relation('categories', 'category_id') category!: any;

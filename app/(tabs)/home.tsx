@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import withObservables from '@nozbe/with-observables';
 import { database } from '@/src/database';
 import Task from '@/src/database/model/Task';
-import { Q } from '@nozbe/watermelondb';
 import { useAuth } from '@/src/contexts/AuthContext';
 import TaskItem from '@/src/components/TaskItem';
 import { CreateTaskModal } from '@/src/components/CreateTaskModal';
 import { useTheme } from '@/src/contexts/ThemeContext';
-
-// ─── Saudação dinâmica ────────────────────────────────────────────────────────
+import { TODAY } from '@/src/utils/dateHelpers';
+import { getTasksForDate } from '@/src/utils/taskRecurrence';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 function getGreeting() {
     const hour = new Date().getHours();
@@ -19,24 +19,34 @@ function getGreeting() {
     return 'Boa noite';
 }
 
-// ─── Home ─────────────────────────────────────────────────────────────────────
-
-function Home({ tasks }: { tasks: Task[] }) {
+function Home({ tasks }: {
+    tasks: Task[];
+}) {
+    const todayTasks = getTasksForDate(tasks, TODAY);
+    const completed = todayTasks.filter((task) => task.status === 'done').length;
+    const pending = todayTasks.filter((task) => task.status === 'pending').length;
+    const cancelled = todayTasks.filter((task) => task.status === 'cancelled').length;
+    const total = todayTasks.length;
+    const countable = total - cancelled;
+    const progress = countable > 0 ? Math.round((completed / countable) * 100) : 0;
     const { user } = useAuth();
     const { colors } = useTheme();
+    const router = useRouter();
+    const { quickCreate } = useLocalSearchParams<{ quickCreate?: string }>();
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+
+    useEffect(() => {
+        if (!quickCreate) return;
+        setModalVisible(true);
+        router.setParams({ quickCreate: undefined });
+    }, [quickCreate, router]);
 
     const onRefresh = async () => {
         setRefreshing(true);
         console.log('Iniciando sincronização...');
         setRefreshing(false);
     };
-
-    const total = tasks.length;
-    const completed = tasks.filter(t => t.status === 'done').length;
-    const pending = tasks.filter(t => t.status === 'pending').length;
-    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -52,25 +62,24 @@ function Home({ tasks }: { tasks: Task[] }) {
                     />
                 }
             >
-                {/* Header */}
+
                 <View style={styles.header}>
                     <Text style={[styles.greeting, { color: colors.text }]}>
                         {getGreeting()}{user?.name ? `, ${user.name}` : ''}! 👋
                     </Text>
                     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                        {total === 0
+                        {countable === 0
                             ? 'Nenhuma tarefa para hoje'
-                            : `${total} ${total === 1 ? 'tarefa' : 'tarefas'} para hoje`}
+                            : `${countable} ${countable === 1 ? 'tarefa' : 'tarefas'} para hoje`}
                     </Text>
                 </View>
 
-                {/* Card de progresso */}
                 <View style={[styles.progressCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
                     <View style={styles.progressHeader}>
                         <View>
                             <Text style={[styles.progressTitle, { color: colors.text }]}>Progresso do dia</Text>
                             <Text style={[styles.progressSubtitle, { color: colors.textSecondary }]}>
-                                {total === 0 ? 'Sem tarefas para hoje' : `${completed} de ${total} concluída${completed !== 1 ? 's' : ''}`}
+                                {countable === 0 ? 'Sem tarefas para hoje' : `${completed} de ${countable} concluída${completed !== 1 ? 's' : ''}`}
                             </Text>
                         </View>
                         <Text style={[styles.progressPercentage, { color: progress === 100 ? colors.success : colors.primary }]}>
@@ -88,7 +97,6 @@ function Home({ tasks }: { tasks: Task[] }) {
                         ]} />
                     </View>
 
-                    {/* Mini stats */}
                     {total > 0 && (
                         <View style={styles.statsRow}>
                             <View style={styles.statItem}>
@@ -107,12 +115,11 @@ function Home({ tasks }: { tasks: Task[] }) {
                     )}
                 </View>
 
-                {/* Lista de tarefas */}
                 <View style={styles.tasksSection}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Tarefas de hoje</Text>
 
                     <FlatList
-                        data={tasks}
+                        data={todayTasks}
                         keyExtractor={(item) => item.id}
                         renderItem={({ item }) => <TaskItem task={item} type={'home'} />}
                         scrollEnabled={false}
@@ -132,7 +139,6 @@ function Home({ tasks }: { tasks: Task[] }) {
                 </View>
             </ScrollView>
 
-            {/* FAB */}
             <TouchableOpacity
                 style={[styles.fab, { backgroundColor: colors.buttonPrimary }]}
                 onPress={() => setModalVisible(true)}
@@ -146,28 +152,11 @@ function Home({ tasks }: { tasks: Task[] }) {
     );
 }
 
-const enhance = withObservables([], () => {
-    const now = new Date();
-    const startOfDay = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        0, 0, 0, 0,
-    );
-
-    const endOfDay = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        23, 59, 59, 999,
-    );
-
-    return {
-        tasks: database.get<Task>('tasks').query(
-            Q.where('deadline', Q.between(startOfDay.getTime(), endOfDay.getTime()))
-        ).observe(),
-    };
-});
+const enhance = withObservables([], () => ({
+    tasks: database.get<Task>('tasks')
+        .query()
+        .observe(),
+}));
 
 export default enhance(Home);
 
